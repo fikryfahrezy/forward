@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    working-directory: ./blog-api
+
 jobs:
   lint:
     strategy:
@@ -30,6 +34,7 @@ jobs:
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.4.0
+          working-directory: ./blog-api
   test:
     needs: lint
     strategy:
