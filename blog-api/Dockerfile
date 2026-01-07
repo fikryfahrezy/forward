@@ -39,6 +39,12 @@ WORKDIR /app
 # Copy binary from builder stage
 COPY --from=builder /app/api .
 
+# Copy migrator binary from builder stage
+COPY --from=builder /app/migrate .
+
+# Copy migrations from builder stage
+COPY --from=builder /app/migrations ./migrations
+
 # Copy swagger folder from builder stage
 COPY --from=builder /app/docs ./docs
 
