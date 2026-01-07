@@ -6,23 +6,30 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fikryfahrezy/forward/blog-api/internal/database"
-	"github.com/fikryfahrezy/forward/blog-api/internal/http"
 	"github.com/fikryfahrezy/forward/blog-api/internal/logger"
+	"github.com/fikryfahrezy/forward/blog-api/internal/server"
 )
 
+type JWTConfig struct {
+	SecretKey     string
+	TokenDuration time.Duration
+}
+
 type Config struct {
-	Server   http.Config
+	Server   server.Config
 	Database database.Config
 	Logger   logger.Config
+	JWT      JWTConfig
 }
 
 func Load() Config {
 	loadEnvFile(".env")
 
 	return Config{
-		Server: http.Config{
+		Server: server.Config{
 			Host: getEnv("SERVER_HOST", "localhost"),
 			Port: getEnvAsInt("SERVER_PORT", 8080),
 		},
@@ -32,6 +39,10 @@ func Load() Config {
 		Logger: logger.Config{
 			Level:  logger.ParseLevel(getEnv("LOG_LEVEL", "info")),
 			Format: logger.ParseFormat(getEnv("LOG_FORMAT", "text")),
+		},
+		JWT: JWTConfig{
+			SecretKey:     getEnv("JWT_SECRET_KEY", "your-super-secret-key-change-in-production"),
+			TokenDuration: getEnvAsDuration("JWT_TOKEN_DURATION", 24*time.Hour),
 		},
 	}
 }
@@ -47,6 +58,15 @@ func getEnvAsInt(key string, defaultValue int) int {
 	if value := os.Getenv(key); value != "" {
 		if intValue, err := strconv.Atoi(value); err == nil {
 			return intValue
+		}
+	}
+	return defaultValue
+}
+
+func getEnvAsDuration(key string, defaultValue time.Duration) time.Duration {
+	if value := os.Getenv(key); value != "" {
+		if duration, err := time.ParseDuration(value); err == nil {
+			return duration
 		}
 	}
 	return defaultValue

@@ -65,4 +65,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:${PORT}/api/health || exit 1
 
 # Run the application
-CMD ["sh", "-c", "./migrate -action=up && ./api"]
+CMD ["sh", "-c", "./api"]

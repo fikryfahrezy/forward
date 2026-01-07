@@ -1,0 +1,51 @@
+name: Blog API CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    strategy:
+      matrix:
+        go: ['>=1.25.5']
+        os: [ubuntu-24.04]
+    name: lint
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go }}
+      - name: Download dependencies
+        run: go mod download
+      - name: Generate API documentation
+        run: make swagger
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.4.0
+  test:
+    needs: lint
+    strategy:
+      matrix:
+        go: ['>=1.25.5']
+        os: [ubuntu-24.04]
+    name: test
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go }}
+      - name: Download dependencies
+        run: go mod download
+      - name: Generate API documentation
+        run: make swagger
+      - name: Run tests
+        run: go test -v -race -coverprofile=coverage.out ./...

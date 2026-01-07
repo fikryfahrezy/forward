@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/fikryfahrezy/forward/blog-api/internal/database"
-	appHttp "github.com/fikryfahrezy/forward/blog-api/internal/http"
+	"github.com/fikryfahrezy/forward/blog-api/internal/server"
 )
 
 type HealthHandler struct {
@@ -73,11 +73,11 @@ func (h *HealthHandler) HealthCheck(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	appHttp.JSON(w, httpStatus, response)
+	server.JSON(w, httpStatus, response)
 }
 
 // SetupRoutes configures health check routes
-func (h *HealthHandler) SetupRoutes(server *appHttp.Server) {
+func (h *HealthHandler) SetupRoutes(server *server.Server) {
 	// Health check endpoint (no versioning needed)
 	server.HandleFunc("GET /api/health", h.HealthCheck)
 }

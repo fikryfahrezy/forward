@@ -1,4 +1,4 @@
-package http
+package server
 
 import (
 	"context"
@@ -20,9 +20,10 @@ type Config struct {
 
 // Server manages the application server lifecycle
 type Server struct {
-	config Config
-	mux    *http.ServeMux
-	server *http.Server
+	config        Config
+	mux           *http.ServeMux
+	server        *http.Server
+	jwtMiddleware *JWTMiddleware
 }
 
 // RouteHandler defines interface for features to register their routes
@@ -82,6 +83,17 @@ func (s *Server) Mux() *http.ServeMux {
 
 func (s *Server) HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request)) {
 	s.mux.Handle(pattern, LoggerMiddleware(RecoverMiddleware(CORSMiddleware((http.HandlerFunc(handler))))))
+}
+
+func (s *Server) HandleFuncWithAuth(pattern string, handler func(http.ResponseWriter, *http.Request)) {
+	if s.jwtMiddleware == nil {
+		panic("JWT middleware not configured. Call SetJWTMiddleware first.")
+	}
+	s.mux.Handle(pattern, LoggerMiddleware(RecoverMiddleware(CORSMiddleware(s.jwtMiddleware.Middleware(http.HandlerFunc(handler))))))
+}
+
+func (s *Server) SetJWTMiddleware(jwtMiddleware *JWTMiddleware) {
+	s.jwtMiddleware = jwtMiddleware
 }
 
 func LoggerMiddleware(next http.Handler) http.Handler {

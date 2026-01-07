@@ -4,6 +4,10 @@
 // @host localhost:8080
 // @BasePath /api
 // @schemes http https
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 package main
 
 import (
@@ -14,11 +18,20 @@ import (
 	"syscall"
 	"time"
 
+	commentHandler "github.com/fikryfahrezy/forward/blog-api/internal/comment/handler"
+	commentRepo "github.com/fikryfahrezy/forward/blog-api/internal/comment/repository"
+	commentService "github.com/fikryfahrezy/forward/blog-api/internal/comment/service"
 	"github.com/fikryfahrezy/forward/blog-api/internal/config"
 	"github.com/fikryfahrezy/forward/blog-api/internal/database"
 	"github.com/fikryfahrezy/forward/blog-api/internal/health"
-	"github.com/fikryfahrezy/forward/blog-api/internal/http"
 	"github.com/fikryfahrezy/forward/blog-api/internal/logger"
+	postHandler "github.com/fikryfahrezy/forward/blog-api/internal/post/handler"
+	postRepo "github.com/fikryfahrezy/forward/blog-api/internal/post/repository"
+	postService "github.com/fikryfahrezy/forward/blog-api/internal/post/service"
+	"github.com/fikryfahrezy/forward/blog-api/internal/server"
+	userHandler "github.com/fikryfahrezy/forward/blog-api/internal/user/handler"
+	userRepo "github.com/fikryfahrezy/forward/blog-api/internal/user/repository"
+	userService "github.com/fikryfahrezy/forward/blog-api/internal/user/service"
 
 	_ "github.com/fikryfahrezy/forward/blog-api/docs"
 )
@@ -41,14 +54,40 @@ func main() {
 		os.Exit(1)
 	}
 
-	healthHandler := health.NewHealthHandler(db)
+	// Initialize repositories
+	userRepository := userRepo.New(db.Pool)
+	postRepository := postRepo.New(db.Pool)
+	commentRepository := commentRepo.New(db.Pool)
 
-	srv := http.New(http.Config{
+	// Initialize services
+	userSvc := userService.New(userRepository)
+	postSvc := postService.New(postRepository)
+	commentSvc := commentService.New(commentRepository)
+
+	// Initialize handlers
+	healthHdl := health.NewHealthHandler(db)
+	userHdl := userHandler.New(userSvc, cfg.JWT.SecretKey, cfg.JWT.TokenDuration)
+	postHdl := postHandler.New(postSvc)
+	commentHdl := commentHandler.New(commentSvc)
+
+	// Initialize server
+	srv := server.New(server.Config{
 		Host: cfg.Server.Host,
 		Port: cfg.Server.Port,
 	})
-	routeHandlers := []http.RouteHandler{
-		healthHandler,
+
+	// Configure JWT middleware
+	jwtMiddleware := server.NewJWTMiddleware(server.JWTConfig{
+		SecretKey: cfg.JWT.SecretKey,
+	})
+	srv.SetJWTMiddleware(jwtMiddleware)
+
+	// Register route handlers
+	routeHandlers := []server.RouteHandler{
+		healthHdl,
+		userHdl,
+		postHdl,
+		commentHdl,
 	}
 
 	go func() {

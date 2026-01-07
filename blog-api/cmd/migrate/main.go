@@ -55,7 +55,11 @@ func main() {
 		log.Error("Failed to connect to database", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Error("Failed to close database", slog.String("error", err.Error()))
+		}
+	}()
 
 	driver, err := pgx.WithInstance(db, &pgx.Config{
 		MigrationsTable: "migrations",
