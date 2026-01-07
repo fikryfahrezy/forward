@@ -40,7 +40,7 @@ func New(pool int, opts ...option) *wrk {
 	}
 
 	for i := range pool {
-		go worker.work(i)
+		go worker.work(i + 1)
 	}
 
 	return worker
