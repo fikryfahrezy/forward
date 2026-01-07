@@ -1,0 +1,10 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: statement-viewer-simulation-be
+    env_file:
+      - path: ./.env
+        required: true
+    restart: unless-stopped
