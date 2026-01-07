@@ -31,12 +31,12 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
-RUN useradd -r -s /bin/false appuser
+RUN useradd -r -m -s /bin/false appuser
 
 # Set working directory
 WORKDIR /app
 
-# Copy binary from builder stage
+# Copy api binary from builder stage
 COPY --from=builder /app/api .
 
 # Copy migrator binary from builder stage
