@@ -17,10 +17,10 @@ COPY . .
 RUN make swagger
 
 # Build the application using Makefile
-RUN make build-api && mv api main
+RUN make build-api
 
 # Build the migrator binary using Makefile
-RUN make build-migrator && mv migrate migrate
+RUN make build-migrate
 
 # Final stage
 FROM ubuntu:24.04
@@ -37,7 +37,7 @@ RUN useradd -r -s /bin/false appuser
 WORKDIR /app
 
 # Copy binary from builder stage
-COPY --from=builder /app/main .
+COPY --from=builder /app/api .
 
 # Copy swagger folder from builder stage
 COPY --from=builder /app/docs ./docs
@@ -59,4 +59,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:${PORT}/api/health || exit 1
 
 # Run the application
-CMD ["sh", "-c", "./migrate -action=up && ./main"]
+CMD ["sh", "-c", "./migrate -action=up && ./api"]
