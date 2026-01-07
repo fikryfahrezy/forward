@@ -38,6 +38,3 @@ bin/*
 # Docs folder - ignore generated swagger files except .gitkeep
 docs/*
 !docs/.gitkeep
-
-# macOS system files
-.DS_Store
