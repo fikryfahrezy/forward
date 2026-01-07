@@ -1,10 +1,5 @@
-.PHONY: build-http build-migrate run test test-clean-cache test-coverage test-coverage-html fmt migrate-up migrate-down migrate-force migrate-version migrate-create swagger
+.PHONY: run test test-clean-cache test-coverage test-coverage-html fmt migrate-up migrate-down migrate-force migrate-version migrate-create swagger
 
-build-api:
-	go build -o api ./cmd/api
-
-build-migrate:
-	go build -o migrate ./cmd/migrate
 
 run:
 	go run cmd/api/main.go
@@ -48,8 +43,6 @@ swagger:
 # Help
 help:
 	@echo "Available commands:"
-	@echo "  build-http         - Build the HTTP server binary"
-	@echo "  build-migrate     - Build the migrator binary"
 	@echo "  run                - Run the HTTP server"
 	@echo "  test               - Run all tests"
 	@echo "  test-clean-cache   - Clear test cache"

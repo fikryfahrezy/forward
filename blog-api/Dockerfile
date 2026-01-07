@@ -17,10 +17,10 @@ COPY . .
 RUN make swagger
 
 # Build the application using Makefile
-RUN make build-api
+RUN go build -o api ./cmd/api
 
 # Build the migrator binary using Makefile
-RUN make build-migrate
+RUN go build -o migrate ./cmd/migrate
 
 # Final stage
 FROM ubuntu:24.04
