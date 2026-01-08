@@ -54,6 +54,12 @@ The author doesn't have any experience that relate to E-Commerce domain nor desi
 - `Transport Service` publish event to `Kafka`.
 - `Order Service` consume event from `Kafka` to update the order status.
 
+### Search & Recommendation Ingestion
+
+- `Product Service` publish create or update product event to `Kafka`.
+- `Search Service` consume the event to update data in `ElasticSearch`.
+- `Recommendation Service` consume the event to update the data in `Redis`.
+
 ## Tech stack
 
 Here are the tech stacks of choices, the reason why choose it, and the altenative(s).
@@ -132,7 +138,372 @@ Alternative(s): [SigNoz](https://github.com/SigNoz/signoz) [Elasticsearch](https
 
 ## Database Schema
 
+### User Service
+
+#### PostgreSQL
+
+```sql
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE addresses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    label VARCHAR(50) NOT NULL,
+    province_id INT NOT NULL,
+    province_name VARCHAR(100) NOT NULL,
+    city_id INT NOT NULL,
+    city_name VARCHAR(100) NOT NULL,
+    district_id INT NOT NULL,
+    district_name VARCHAR(100) NOT NULL,
+    subdistrict_id INT NOT NULL,
+    subdistrict_name VARCHAR(100) NOT NULL,
+    street VARCHAR(255) NOT NULL,
+    postal_code VARCHAR(20) NOT NULL,
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Auth Service
+
+#### PostgreSQL
+
+```sql
+CREATE TABLE credentials (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    email_verified BOOLEAN DEFAULT FALSE,
+    status VARCHAR(20) DEFAULT 'active',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### Redis
+
+- `session:{user_id}`: JWT metadata (TTL: 7 days)
+- `refresh:{token_id}`: refresh token (TTL: 30 days)
+- `blacklist:{token_id}`: invalidated token, to prevent re-use the token from logged out user (TTL: until expiry (remaining token lifetime))
+- `otp:{user_id}:{type}`: OTP code per type (email verification or phone verification) (TTL: 5 min)
+- `otp_attempts:{user_id}:{type}`: attempt count per type (TTL: 15 min)
+
+### Product Service
+
+#### PostgreSQL
+
+```sql
+CREATE TABLE products (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sku VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT DEFAULT '',
+    price DECIMAL(12,2) NOT NULL,
+    status VARCHAR(20) DEFAULT 'active', -- active, inactive
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE inventory (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    product_id UUID NOT NULL REFERENCES products(id),
+    quantity INT NOT NULL DEFAULT 0,
+    reserved INT NOT NULL DEFAULT 0,
+    version INT DEFAULT 1,
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(product_id)
+);
+```
+
+#### Redis
+
+- `product:{id}`: product cache (TTL: 15 min)
+- `inventory:{product_id}` -> available quantity (for fast check or showing available quantity for search or recommendation product, updated every product quantity change)
+
+### Order Service
+
+#### PostgreSQL
+
+```sql
+CREATE TABLE orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_number VARCHAR(20) UNIQUE NOT NULL,
+    user_id UUID NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending', -- pending, paid, processing, shipped, delivered, cancelled, refunded
+    subtotal DECIMAL(12,2) NOT NULL,
+    shipping_amount DECIMAL(12,2) DEFAULT 0,
+    total_amount DECIMAL(12,2) NOT NULL,
+    shipping_address JSONB NOT NULL, -- the snapshot for user address
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE order_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    product_id UUID NOT NULL,
+    product_name VARCHAR(255) NOT NULL,
+    unit_price DECIMAL(12,2) NOT NULL,
+    quantity INT NOT NULL,
+    total_amount DECIMAL(12,2) NOT NULL,
+    product_snapshot JSONB NOT NULL
+);
+
+CREATE TABLE complaints (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID NOT NULL,
+    order_item_id UUID,
+    user_id UUID NOT NULL,
+    type VARCHAR(30) NOT NULL, -- defect, wrong_item, damaged, missing, other
+    description TEXT NOT NULL,
+    evidence_urls JSONB DEFAULT '[]',
+    status VARCHAR(30) DEFAULT 'open', -- open, under_review, resolved, rejected
+    resolution_type VARCHAR(30), -- refund, replacement, store_credit, rejected
+    resolution_note TEXT,
+    resolved_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### Redis
+
+- `cart:{user_id}` -> cart items JSON (TTL: 30 days)
+
+### Payment Service
+
+#### PostgreSQL
+
+```sql
+CREATE TABLE transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID NOT NULL,
+    user_id UUID NOT NULL,
+    gateway VARCHAR(50) NOT NULL, -- payment provider
+    gateway_transaction_id VARCHAR(255), -- payment provider reference id
+    amount DECIMAL(12,2) NOT NULL,
+    currency CHAR(3) DEFAULT 'IDR',
+    status VARCHAR(30) NOT NULL, -- pending, processing, success, failed, expired, cancelled, refunding, refunded, refund_failed
+    refund_reason VARCHAR(255),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Transport Service
+
+#### PostgreSQL
+
+```sql
+CREATE TABLE shipments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID NOT NULL,
+    carrier VARCHAR(50), -- logistic provider
+    tracking_number VARCHAR(100),
+    status VARCHAR(30) DEFAULT 'pending', -- pending, picked_up, in_transit, out_for_delivery, delivered, failed, returned
+    destination_address JSONB NOT NULL, -- complete address
+    shipping_cost DECIMAL(12,2),
+    estimated_delivery DATE,
+    shipped_at TIMESTAMPTZ,
+    delivered_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE tracking_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    shipment_id UUID NOT NULL REFERENCES shipments(id),
+    status VARCHAR(50) NOT NULL, -- order_received, packing, picked_up, arrived_facility, departed_facility, out_for_delivery, delivered, returned_to_sender
+    location VARCHAR(255),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Notification Service (PostgreSQL)
+
+```sql
+CREATE TABLE notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    type VARCHAR(20) NOT NULL, -- like welcome, order_confirmation, promote
+    channel VARCHAR(20) NOT NULL, -- email, sms, push, whatsapps
+    recipient VARCHAR(255) NOT NULL,
+    subject VARCHAR(255),
+    content TEXT,
+    status VARCHAR(20) DEFAULT 'pending', -- pending, sent, failed
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Analytic Service
+
+#### ClickHouse
+
+```sql
+CREATE TABLE events (
+    id UUID,
+    event_type String,
+    user_id UUID,
+    data String,
+    created_at DateTime DEFAULT now()
+) ENGINE = MergeTree()
+ORDER BY (event_type, created_at);
+
+CREATE TABLE order_metrics (
+    date Date,
+    total_orders UInt32,
+    total_revenue Decimal(12,2),
+    avg_order_value Decimal(12,2)
+) ENGINE = SummingMergeTree()
+ORDER BY date;
+```
+
+### Search Service
+
+#### Elasticsearch
+
+```json
+{
+  "products": {
+    "mappings": {
+      "properties": {
+        "id": { "type": "keyword" },
+        "sku": { "type": "keyword" },
+        "name": {
+          "type": "text",
+          "fields": { "keyword": { "type": "keyword" } }
+        },
+        "description": { "type": "text" },
+        "price": { "type": "float" },
+        "in_stock": { "type": "boolean" },
+        "created_at": { "type": "date" }
+      }
+    }
+  }
+}
+```
+
+### Recommendation Service (Redis)
+
+```
+-- Redis Keys
+-- rec:popular -> sorted set of product IDs by sales
+-- rec:user:{user_id} -> list of recommended product IDs
+-- rec:similar:{product_id} -> list of similar product IDs
+```
+
 ## (Some) Potential Related API
+
+### Auth Service
+
+```
+POST   /auth/register          # Register new user
+POST   /auth/login             # Login
+POST   /auth/logout            # Logout
+POST   /auth/refresh           # Refresh token
+POST   /auth/otp/send          # Send OTP
+POST   /auth/otp/verify        # Verify OTP
+POST   /auth/password/reset    # Reset password
+```
+
+### User Service
+
+```
+GET    /users/me               # Get current user profile
+PATCH  /users/me               # Update profile
+GET    /users/me/addresses     # List addresses
+POST   /users/me/addresses     # Add address
+PATCH  /users/me/addresses/:id # Update address
+DELETE /users/me/addresses/:id # Delete address
+```
+
+### Product Service
+
+```
+GET    /products               # List products with pagination
+GET    /products/:id           # Get product detail
+GET    /products/:id/inventory # Get stock availability
+GET    /products/inventory?ids= # Get stock availability
+POST   /inventory/reserve      # Reserve stock
+POST   /inventory/release      # Release stock
+POST   /inventory/deduct       # Confirm deduction
+```
+
+### Search Service
+
+```
+GET    /search?q=              # Search products
+GET    /search/suggestions?q=  # Autocomplete
+```
+
+### Recommendation Service
+
+```
+GET    /recommendations/popular           # Popular products
+GET    /recommendations/user/:id          # For user
+GET    /recommendations/similar/:productId # Similar products
+```
+
+### Order Service
+
+```
+GET    /cart                   # Get cart
+POST   /cart/items             # Add to cart
+PATCH  /cart/items/:id         # Update quantity
+DELETE /cart/items/:id         # Remove item
+DELETE /cart                   # Clear cart
+
+POST   /checkout               # Create order from cart
+GET    /orders                 # List user orders
+GET    /orders/:id             # Get order detail
+POST   /orders/:id/cancel      # Cancel order
+
+POST   /orders/:id/complaint   # Create complaint for order
+GET    /orders/:id/complaint   # Get complaint for order
+PATCH  /orders/:id/complaint   # Update complaint (add evidence, update description)
+POST   /orders/:id/complaint/resolve # Resolve complaint
+```
+
+### Payment Service
+
+```
+POST   /payments/intent        # Create payment intent
+POST   /payments/confirm       # Confirm payment
+POST   /payments/webhook       # Gateway webhook
+GET    /payments/:orderId      # Get payment status
+POST   /refunds                # Request refund
+```
+
+### Transport Service
+
+```
+POST   /shipping/rates         # Calculate shipping rates
+GET    /shipments/:orderId     # Get shipment status
+GET    /shipments/:id/tracking # Get tracking events
+POST   /shipments/webhook      # Carrier webhook
+```
+
+### Notification Service
+
+```
+GET    /notifications          # List user notifications
+PATCH  /notifications/:id/read # Mark as read
+```
+
+### Analytic Service
+
+```
+GET    /analytics/dashboard    # Dashboard metrics
+GET    /analytics/orders       # Order metrics
+```
 
 ## References
 
