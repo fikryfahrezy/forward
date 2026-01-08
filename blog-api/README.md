@@ -141,3 +141,5 @@ project-root/
 ## Test coverage report
 
 ![Coverage](https://img.shields.io/badge/coverage-74.1%25-yellow)
+
+*See on the GitHub Actions summary for the breakdown
