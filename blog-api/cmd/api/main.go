@@ -1,8 +1,6 @@
 // @title Simple Blog API
 // @description A simple API for CRUD Blog & Comment written in Go
 // @version 1.0
-// @host localhost:8080
-// @BasePath /api
 // @schemes http https
 // @securityDefinitions.apikey BearerAuth
 // @in header
