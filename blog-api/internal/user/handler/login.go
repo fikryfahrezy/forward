@@ -15,10 +15,10 @@ import (
 // @Accept       json
 // @Produce      json
 // @Param        request  body      user.LoginRequest  true  "Login credentials"
-// @Success      200      {object}  server.APIResponse{message=string,result=user.User}  "Login successful"
-// @Failure      400      {object}  server.APIResponse{message=string,error=string}      "Invalid input"
-// @Failure      401      {object}  server.APIResponse{message=string,error=string}      "Invalid credentials"
-// @Failure      500      {object}  server.APIResponse{message=string,error=string}      "Internal server error"
+// @Success      200      {object}  server.APIResponse{message=string,result=user.AuthResponse}  "Login successful"
+// @Failure      400      {object}  server.APIResponse{message=string,error=string}              "Invalid input"
+// @Failure      401      {object}  server.APIResponse{message=string,error=string}              "Invalid credentials"
+// @Failure      500      {object}  server.APIResponse{message=string,error=string}              "Internal server error"
 // @Router       /api/v1/auth/login [post]
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	var req user.LoginRequest
@@ -33,17 +33,8 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.jwtGenerator.GenerateToken(u.ID.String(), u.Username, u.Email)
-	if err != nil {
-		server.ErrorResponse(w, http.StatusInternalServerError, "Failed to generate token", nil)
-		return
-	}
-
 	server.JSON(w, http.StatusOK, server.APIResponse{
 		Message: "Login successful",
-		Result: user.AuthResponse{
-			Token: token,
-			User:  u,
-		},
+		Result:  u,
 	})
 }

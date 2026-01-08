@@ -184,8 +184,8 @@ func runMigrations(databaseURL string) error {
 
 func setupTestHandler() {
 	repo := repository.New(testPool)
-	svc := service.New(repo)
-	testHandler = handler.New(svc, testJWTSecret, testTokenExpiry)
+	svc := service.New(server.NewJWTGenerator(testJWTSecret, testTokenExpiry), repo)
+	testHandler = handler.New(svc)
 
 	// Setup server with JWT middleware
 	testServer = server.New(server.Config{Host: "localhost", Port: 8080})

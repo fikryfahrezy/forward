@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/fikryfahrezy/forward/blog-api/internal/server"
 	"github.com/fikryfahrezy/forward/blog-api/internal/user"
@@ -10,14 +9,12 @@ import (
 )
 
 type Handler struct {
-	service      *service.Service
-	jwtGenerator *server.JWTGenerator
+	service *service.Service
 }
 
-func New(svc *service.Service, jwtSecretKey string, tokenDuration time.Duration) *Handler {
+func New(svc *service.Service) *Handler {
 	return &Handler{
-		service:      svc,
-		jwtGenerator: server.NewJWTGenerator(jwtSecretKey, tokenDuration),
+		service: svc,
 	}
 }
 

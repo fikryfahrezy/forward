@@ -10,34 +10,34 @@ import (
 	"github.com/fikryfahrezy/forward/blog-api/internal/user"
 )
 
-func (s *Service) Register(ctx context.Context, req user.RegisterRequest) (user.User, error) {
+func (s *Service) Register(ctx context.Context, req user.RegisterRequest) (user.AuthResponse, error) {
 	// Validate input
 	if req.Email == "" || req.Username == "" || req.Password == "" {
-		return user.User{}, user.ErrInvalidInput
+		return user.AuthResponse{}, user.ErrInvalidInput
 	}
 
 	// Check if email exists
 	emailExists, err := s.repo.ExistsByEmail(ctx, req.Email)
 	if err != nil {
-		return user.User{}, err
+		return user.AuthResponse{}, err
 	}
 	if emailExists {
-		return user.User{}, user.ErrEmailExists
+		return user.AuthResponse{}, user.ErrEmailExists
 	}
 
 	// Check if username exists
 	usernameExists, err := s.repo.ExistsByUsername(ctx, req.Username)
 	if err != nil {
-		return user.User{}, err
+		return user.AuthResponse{}, err
 	}
 	if usernameExists {
-		return user.User{}, user.ErrUsernameExists
+		return user.AuthResponse{}, user.ErrUsernameExists
 	}
 
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return user.User{}, err
+		return user.AuthResponse{}, err
 	}
 
 	now := time.Now()
@@ -51,8 +51,16 @@ func (s *Service) Register(ctx context.Context, req user.RegisterRequest) (user.
 	}
 
 	if err := s.repo.Create(ctx, u); err != nil {
-		return user.User{}, err
+		return user.AuthResponse{}, err
 	}
 
-	return u, nil
+	token, err := s.jwtGenerator.GenerateToken(u.ID.String(), u.Username, u.Email)
+	if err != nil {
+		return user.AuthResponse{}, err
+	}
+
+	return user.AuthResponse{
+		Token: token,
+		User:  u,
+	}, nil
 }

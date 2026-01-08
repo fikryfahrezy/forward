@@ -185,8 +185,8 @@ func runMigrations(databaseURL string) error {
 
 func setupTestHandlers() {
 	userRepo := userRepository.New(testPool)
-	userSvc := userService.New(userRepo)
-	testUserHandler = userHandler.New(userSvc, testJWTSecret, testTokenExpiry)
+	userSvc := userService.New(server.NewJWTGenerator(testJWTSecret, testTokenExpiry), userRepo)
+	testUserHandler = userHandler.New(userSvc)
 
 	postRepo := postRepository.New(testPool)
 	postSvc := postService.New(postRepo)

@@ -58,13 +58,16 @@ func main() {
 	commentRepository := commentRepo.New(db.Pool)
 
 	// Initialize services
-	userSvc := userService.New(userRepository)
+	userSvc := userService.New(
+		server.NewJWTGenerator(cfg.JWT.SecretKey, cfg.JWT.TokenDuration),
+		userRepository,
+	)
 	postSvc := postService.New(postRepository)
 	commentSvc := commentService.New(commentRepository)
 
 	// Initialize handlers
 	healthHdl := health.NewHealthHandler(db)
-	userHdl := userHandler.New(userSvc, cfg.JWT.SecretKey, cfg.JWT.TokenDuration)
+	userHdl := userHandler.New(userSvc)
 	postHdl := postHandler.New(postSvc)
 	commentHdl := commentHandler.New(commentSvc)
 
