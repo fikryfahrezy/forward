@@ -84,13 +84,23 @@ Alternative(s): [Nomad](https://github.com/hashicorp/nomad), [Docker Swarm](http
 
 [Postgres](https://github.com/postgres/postgres)
 
+- Open source
+- Conforms to at least 170 of the 177 mandatory features for SQL:2023 (at time writing this)
+
 Alternative(s): [MariaDB](https://github.com/MariaDB/server)
 
 [ClickHouse](https://github.com/ClickHouse/ClickHouse)
 
+- Open Source
+- Fast
+- Support SQL for querying the data
+
 Alternative(s): [TimescaleDB](https://github.com/timescale/timescaledb)
 
 [Redis](https://github.com/redis/redis)
+
+- Well known key-val database
+- Re-open source
 
 Alternative(s): [Valkey](https://github.com/valkey-io/valkey), [Dragonfly](https://github.com/dragonflydb/dragonfly), [Memcached](https://github.com/memcached/memcached)
 
@@ -98,11 +108,16 @@ Alternative(s): [Valkey](https://github.com/valkey-io/valkey), [Dragonfly](https
 
 [Kafka](https://github.com/apache/kafka)
 
+- Well known event streaming platform
+
 Alternative(s): [RabbitMQ](https://github.com/rabbitmq/rabbitmq-server), [Redpanda](https://github.com/redpanda-data/redpanda)
 
 ### Search Engine
 
 [Elasticsearch](https://github.com/elastic/elasticsearch)
+
+- Well known search engine
+- Re-open source
 
 Alternative(s): [Meilisearch](https://github.com/meilisearch/meilisearch), [Typesense](https://github.com/typesense/typesense)
 
@@ -110,7 +125,10 @@ Alternative(s): [Meilisearch](https://github.com/meilisearch/meilisearch), [Type
 
 [Loki](https://github.com/grafana/loki), [Grafana](https://github.com/grafana/grafana), [Tempo](https://github.com/grafana/tempo), [Mimir](https://github.com/grafana/mimir).
 
-Alternative(s): [Elasticsearch](https://github.com/elastic/elasticsearch), [Logstash](https://github.com/elastic/logstash), [Kibana](https://github.com/elastic/kibana)
+- Highly customizalbe
+- Available to self-hosted
+
+Alternative(s): [SigNoz](https://github.com/SigNoz/signoz) [Elasticsearch](https://github.com/elastic/elasticsearch), [Logstash](https://github.com/elastic/logstash), [Kibana](https://github.com/elastic/kibana)
 
 ## Database Schema
 
@@ -123,3 +141,4 @@ Alternative(s): [Elasticsearch](https://github.com/elastic/elasticsearch), [Logs
 - https://microservices.io/patterns
 - https://konghq.com/blog/enterprise/why-kong-is-the-best-api-gateway
 - https://www.qovery.com/blog/9-key-reasons-to-use-or-not-kubernetes-for-your-dev-environments
+- https://www.prisma.io/dataguide/postgresql/benefits-of-postgresql
