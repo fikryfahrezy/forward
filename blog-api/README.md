@@ -1,6 +1,6 @@
 # Blog API
 
-Live URL: http://forward-blog-api.fahrezy.work
+Live URL: https://forward-blog-api.fahrezy.work
 
 ## Setup and running instructions
 
@@ -45,6 +45,19 @@ make run
 
 ### Testing
 
+Integration testing only, so we don't have to create or wrting mock.
+
+Pros:
+
+- Test against real thing
+- Straighforward
+
+Cons:
+
+- Consume more resource to spin up external dependencies like database
+- Slower
+- Hard to test with 3rd party integration
+
 ```bash
 # Run all tests
 make test
@@ -74,7 +87,9 @@ docker compose up --build
 
 ### System Architecture
 
-TBA
+![System Architecture](./assets/system-architecture.png)
+
+Using 3 tier architecture with vertical slicing, Handler <-> Service <-> Repository. Using this architecture, make it easier to supporting multiple presentation layer, hiding the implementation detail to integrate with other resources, and make it easier to change implementation for integrating with other resources.
 
 ### Project Structure
 
@@ -108,18 +123,21 @@ project-root/
 
 ## Technology choices justification
 
-- Go, ...
-- slog, ...
-- net/http, ...
-- PostgreSQL, ...
-- Swagger, ...
-- ory/dockertest, ...
-- Docker, ...
+- `Go`, with the simplicity it offers, it able to build a API server that has good performance (based on benchmark on the internet), producing single binary make it easier to move around, and lower memory footprint.
+- `slog`, built in logger from Go, fast (their claim), able produce source where the log called, support JSON or text format, and support multiple severity level.
+- `net/http`, built in API server from Go, simple, cover most of feature for API like path parameter, http method, and form data.
+- `PostgreSQL`, open-source
+- `Swagger`, popular tool for serving `OpenAPI` spec, and easy to integrate with Go.
+- `ory/dockertest`, make integration testing easy with managing ephermal Docker container for database.
+- `Docker`, for easy and deterministic deployment.
 
 ## Known limitations and future improvements
 
-TBA
+- Dependency inversion, existing implementation pass the concrete object to each layer as there is only 1 implementation for each layer and use integration test approach for testing. Could be use interface if in the future need to have test against mock object, so the dependency is interchangeable.
+- Test coverage, the coverage that collected is only for the feature, the project config or infrastructure setup is not tested yet. There is only integration test yet, it could be improved to have unit test too in the future.
+- JWT configuration, the checking for the JWT only check it's validity and it has long lifetime, in the future could be improved to check the `iat`, `nbf`, `aud`, `iss`, and make it short life then implement refresh token.
+- Logging, the log for the app only log the endpoint hit, implement comprehensive logging later to log the request payload and other data for easy debugging.
 
 ## Test coverage report
 
-TBA
+![Coverage](https://img.shields.io/badge/coverage-74.1%25-yellow)
