@@ -505,6 +505,44 @@ GET    /analytics/dashboard    # Dashboard metrics
 GET    /analytics/orders       # Order metrics
 ```
 
+## Scalability and Reliability Considerations
+
+### Scaling Strategy
+
+#### Stateless Services
+
+- Services store state in persistent storage like Redis or Database
+- Running multiple instances behind load balancer
+- Auto-scale in Kubernetes
+
+#### Database Scaling
+
+- **PostgreSQL**: Add read replicas for heavy-read services
+- **Redis**: Use Redis Cluster
+- **Kafka**: Add more partitions as traffic grows
+- **Elasticsearch**: Add replica shards for search availability
+
+### Reliability Patterns
+
+#### Retries with Backoff
+
+- Retry up to N times
+- Wait longer between each retry (100ms -> 200ms -> 400ms)
+
+#### Circuit Breaker
+
+- If a service fails often, stop calling it temporarily
+- Return fallback response or error immediately
+- Always check if service recovered
+
+### Backup
+
+- **PostgreSQL**: Daily backup
+- **Redis**: Hourly RDB snapshots
+- **Elasticsearch**: Daily snapshots
+
+Keep backups for at least 7 days.
+
 ## References
 
 - https://medusajs.com/blog/ecommerce-architecture
