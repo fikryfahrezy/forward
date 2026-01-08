@@ -10,12 +10,16 @@ test:
 test-clean-cache:
 	go clean -testcache
 
+COVER_EXCLUDE := grep -v -E '(cmd/|docs/|internal/config|internal/database|internal/logger|internal/server|internal/error|internal/health)'
+
 test-coverage:
-	go test -v -coverprofile=coverage.out ./...
+	@go list ./... | $(COVER_EXCLUDE) | tr '\n' ',' | sed 's/,$$//' > /tmp/coverpkg.txt
+	go test -v -coverprofile=coverage.out -coverpkg=$$(cat /tmp/coverpkg.txt) ./...
 	go tool cover -func=coverage.out
 
 test-coverage-html:
-	go test -v -coverprofile=coverage.out ./...
+	@go list ./... | $(COVER_EXCLUDE) | tr '\n' ',' | sed 's/,$$//' > /tmp/coverpkg.txt
+	go test -v -coverprofile=coverage.out -coverpkg=$$(cat /tmp/coverpkg.txt) ./...
 	go tool cover -html=coverage.out -o coverage.html
 
 fmt:
