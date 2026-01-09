@@ -102,6 +102,17 @@ CREATE TABLE post_reactions (
 CREATE INDEX idx_post_reactions_post ON post_reactions(post_id);
 ```
 
+### Post Views Table for Tracking Seen Posts per User
+
+```sql
+CREATE TABLE post_views (
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    viewed_at TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY (user_id, post_id)
+);
+```
+
 ### Saved Posts Table
 
 ```sql
@@ -124,7 +135,6 @@ CREATE TABLE post_comments (
     comment TEXT DEFAULT '',
     attachment_url VARCHAR(500),
     reactions_count BIGINT NOT NULL DEFAULT 0,
-    seen BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -271,6 +281,46 @@ CREATE TABLE notification_deliveries (
 
 CREATE INDEX idx_notification_deliveries_pending ON notification_deliveries(status) WHERE status = 'pending';  -- query for retry
 CREATE INDEX idx_notification_deliveries_user ON notification_deliveries(user_id);
+```
+
+## Feed Generation Query (Pull Model)
+
+```sql
+SELECT
+    p.*,
+    u.username,
+    u.name,
+    u.is_verified,
+    p.repost_of IS NOT NULL AS is_repost,
+    orig.id AS original_post_id,
+    orig_user.username AS original_username
+
+FROM posts p
+
+-- Only get posts from the followed users
+JOIN followers f ON p.user_id = f.following_id
+
+-- Author info
+JOIN users u ON p.user_id = u.id
+
+-- If it's a repost, get original post
+LEFT JOIN posts orig ON p.repost_of = orig.id
+
+-- Original post author info like "X reposted Y's post"
+LEFT JOIN users orig_user ON orig.user_id = orig_user.id
+
+-- Exclude posts already seen by current user
+LEFT JOIN post_views pv ON p.id = pv.post_id AND pv.user_id = :current_user_id
+
+-- Only posts from people I follow and not seen yet
+WHERE f.follower_id = :current_user_id
+  AND pv.post_id IS NULL  -- not seen yet
+
+-- Newest first
+ORDER BY p.created_at DESC
+
+-- Pagination
+LIMIT 20 OFFSET :offset;
 ```
 
 ## References
