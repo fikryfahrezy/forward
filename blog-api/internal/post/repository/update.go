@@ -12,16 +12,15 @@ func (r *Repository) Update(ctx context.Context, p post.Post) error {
 			title = $1,
 			slug = $2,
 			content = $3,
-			updated_at = $4
+			updated_at = NOW()
 		WHERE
-			id = $5
+			id = $4
 			AND deleted_at IS NULL
 	`
 	_, err := r.db.Exec(ctx, query,
 		p.Title,
 		p.Slug,
 		p.Content,
-		p.UpdatedAt,
 		p.ID,
 	)
 	return err

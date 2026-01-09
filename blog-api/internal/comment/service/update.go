@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -28,7 +27,6 @@ func (s *Service) Update(ctx context.Context, commentID, authorID uuid.UUID, req
 	}
 
 	c.Content = req.Content
-	c.UpdatedAt = time.Now()
 
 	if err := s.repo.Update(ctx, c); err != nil {
 		return comment.CommentID{}, err
