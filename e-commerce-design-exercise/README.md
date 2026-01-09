@@ -261,7 +261,6 @@ CREATE TABLE order_items (
 
 CREATE TABLE complaints (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    order_id UUID NOT NULL,
     order_item_id UUID,
     user_id UUID NOT NULL,
     type VARCHAR(30) NOT NULL, -- defect, wrong_item, damaged, missing, other
@@ -332,7 +331,6 @@ CREATE TABLE tracking_events (
 #### PostgreSQL
 
 ```sql
--- In-App Notifications (bell icon)
 CREATE TABLE notifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
@@ -442,13 +440,13 @@ DELETE /users/me/addresses/:id # Delete address
 ### Product Service
 
 ```
-GET    /products               # List products with pagination
-GET    /products/:id           # Get product detail
-GET    /products/:id/inventory # Get stock availability
+GET    /products                # List products with pagination
+GET    /products/:id            # Get product detail
+GET    /products/:id/inventory  # Get stock availability
 GET    /products/inventory?ids= # Get stock availability
-POST   /inventory/reserve      # Reserve stock
-POST   /inventory/release      # Release stock
-POST   /inventory/deduct       # Confirm deduction
+POST   /inventory/reserve       # Reserve stock
+POST   /inventory/release       # Release stock
+POST   /inventory/deduct        # Confirm deduction
 ```
 
 ### Search Service
@@ -461,36 +459,35 @@ GET    /search/suggestions?q=  # Autocomplete
 ### Recommendation Service
 
 ```
-GET    /recommendations/popular           # Popular products
-GET    /recommendations/user/:id          # For user
+GET    /recommendations/popular            # Popular products
+GET    /recommendations/user/:id           # For user
 GET    /recommendations/similar/:productId # Similar products
 ```
 
 ### Order Service
 
 ```
-GET    /cart                   # Get cart
-POST   /cart/items             # Add to cart
-PATCH  /cart/items/:id         # Update quantity
-DELETE /cart/items/:id         # Remove item
-DELETE /cart                   # Clear cart
+GET    /cart                         # Get cart
+POST   /cart/items                   # Add to cart
+PATCH  /cart/items/:id               # Update quantity
+DELETE /cart/items/:id               # Remove item
+DELETE /cart                         # Clear cart
 
-POST   /checkout               # Create order from cart
-GET    /orders                 # List user orders
-GET    /orders/:id             # Get order detail
-POST   /orders/:id/cancel      # Cancel order
+POST   /checkout                     # Create order from cart
+GET    /orders                       # List user orders
+GET    /orders/:id                   # Get order detail
+POST   /orders/:id/cancel            # Cancel order
 
-POST   /orders/:id/complaint   # Create complaint for order
-GET    /orders/:id/complaint   # Get complaint for order
-PATCH  /orders/:id/complaint   # Update complaint (add evidence, update description)
+POST   /orders/:id/complaint         # Create complaint for order
+GET    /orders/:id/complaint         # Get complaint for order
+PATCH  /orders/:id/complaint         # Update complaint (add evidence, update description)
 POST   /orders/:id/complaint/resolve # Resolve complaint
 ```
 
 ### Payment Service
 
 ```
-POST   /payments/intent        # Create payment intent
-POST   /payments/confirm       # Confirm payment
+POST   /payments               # Create payment
 POST   /payments/webhook       # Gateway webhook
 GET    /payments/:orderId      # Get payment status
 POST   /refunds                # Request refund
