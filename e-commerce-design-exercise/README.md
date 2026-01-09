@@ -327,20 +327,34 @@ CREATE TABLE tracking_events (
 );
 ```
 
-### Notification Service (PostgreSQL)
+### Notification Service
+
+#### PostgreSQL
 
 ```sql
+-- In-App Notifications (bell icon)
 CREATE TABLE notifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
-    type VARCHAR(20) NOT NULL, -- like welcome, order_confirmation, promote
-    channel VARCHAR(20) NOT NULL, -- email, sms, push, whatsapps
-    recipient VARCHAR(255) NOT NULL,
-    subject VARCHAR(255),
-    content TEXT,
-    status VARCHAR(20) DEFAULT 'pending', -- pending, sent, failed
+    type VARCHAR(50) NOT NULL,  -- 'promo', 'info', 'price_drop'
+    reference_type VARCHAR(50),  -- 'product', 'promo'
+    reference_id UUID,
+    payload JSONB NOT NULL,  -- {title, message, image_url}
+    seen BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE notification_deliveries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    channel VARCHAR(20) NOT NULL,  -- 'email', 'sms', 'push', 'whatsapp'
+    recipient VARCHAR(255) NOT NULL,  -- email/phone/device token
+    payload JSONB NOT NULL,  -- {subject, body, template_id, template_data}
+    status VARCHAR(20) DEFAULT 'pending',  -- 'pending', 'sent', 'failed'
+    retry_count SMALLINT DEFAULT 0,
+    error_message TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+    sent_at TIMESTAMPTZ
 );
 ```
 
@@ -392,14 +406,13 @@ ORDER BY date;
 }
 ```
 
-### Recommendation Service (Redis)
+### Recommendation Service
 
-```
--- Redis Keys
--- rec:popular -> sorted set of product IDs by sales
--- rec:user:{user_id} -> list of recommended product IDs
--- rec:similar:{product_id} -> list of similar product IDs
-```
+#### Redis
+
+- `rec:popular`: sorted set of product IDs by sales
+- `rec:user:{user_id}`: list of recommended product IDs
+- `rec:similar:{product_id}`: list of similar product IDs
 
 ## (Some) Potential Related API
 
