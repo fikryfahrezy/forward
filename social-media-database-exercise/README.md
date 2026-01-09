@@ -124,6 +124,7 @@ CREATE TABLE post_comments (
     comment TEXT DEFAULT '',
     attachment_url VARCHAR(500),
     reactions_count BIGINT NOT NULL DEFAULT 0,
+    seen BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -234,6 +235,42 @@ CREATE TABLE message_histories (
 );
 
 CREATE INDEX idx_message_histories_message ON message_histories(message_id);
+```
+
+### Notifications Table for In-App
+
+```sql
+CREATE TABLE notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    type VARCHAR(50) NOT NULL,  -- 'like', 'comment', 'follow', 'mention', 'repost'
+    reference_type VARCHAR(50),  -- 'post', 'comment', 'user'
+    reference_id UUID,  -- id of post/comment/user
+    seen BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_notifications_user ON notifications(user_id);
+CREATE INDEX idx_notifications_unseen ON notifications(user_id) WHERE seen = FALSE; -- for badge counter
+```
+
+### Notification Deliveries Table for Email/Push Queue
+
+```sql
+CREATE TABLE notification_deliveries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    notification_id UUID REFERENCES notifications(id) ON DELETE SET NULL,  -- optional link to in-app notification
+    channel VARCHAR(20) NOT NULL,  -- 'email', 'push'
+    payload JSONB DEFAULT '{}',
+    status VARCHAR(20) DEFAULT 'pending',  -- 'pending', 'sent', 'failed'
+    retry_count SMALLINT DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    sent_at TIMESTAMPTZ
+);
+
+CREATE INDEX idx_notification_deliveries_pending ON notification_deliveries(status) WHERE status = 'pending';  -- query for retry
+CREATE INDEX idx_notification_deliveries_user ON notification_deliveries(user_id);
 ```
 
 ## References
