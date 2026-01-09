@@ -15,8 +15,8 @@ import (
 // @Tags         comments
 // @Produce      json
 // @Param        postId    path      string  true   "Post ID"
-// @Param        page      query     int     false  "Page number"   default(1)
-// @Param        page_size query     int     false  "Page size"     default(10)
+// @Param        page      query     int     false  "Page number"  default(1)
+// @Param        page_size query     int     false  "Page size"    default(10)
 // @Success      200       {object}  server.APIResponse{message=string,error=string,result=comment.CommentListResponse}  "Comments retrieved successfully"
 // @Failure      404       {object}  server.APIResponse{message=string,error=string}                                     "Post not found"
 // @Failure      500       {object}  server.APIResponse{message=string,error=string}                                     "Internal server error"

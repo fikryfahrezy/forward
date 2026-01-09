@@ -12,8 +12,8 @@ import (
 // @Description  Get a paginated list of all blog posts
 // @Tags         posts
 // @Produce      json
-// @Param        page      query     int  false  "Page number"     default(1)
-// @Param        page_size query     int  false  "Page size"       default(10)
+// @Param        page      query     int  false  "Page number"  default(1)
+// @Param        page_size query     int  false  "Page size"    default(10)
 // @Success      200       {object}  server.APIResponse{message=string,result=post.PostListResponse}  "Posts retrieved successfully"
 // @Failure      500       {object}  server.APIResponse{message=string,error=string}                  "Internal server error"
 // @Router       /api/v1/posts [get]
