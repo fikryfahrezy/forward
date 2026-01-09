@@ -49,7 +49,7 @@ func (h *HealthHandler) HealthCheck(w http.ResponseWriter, r *http.Request) {
 	message := "Service is healthy"
 	httpStatus := http.StatusOK
 
-	dbCheck := map[string]any{"status": "unknown"}
+	dbCheck := map[string]any{"status": "ok"}
 
 	// Check database connection
 	if err := h.db.Health(r.Context()); err != nil {
