@@ -11,30 +11,21 @@ import (
 )
 
 func (s *Service) Register(ctx context.Context, req user.RegisterRequest) (user.AuthResponse, error) {
-	// Validate input
-	if req.Email == "" || req.Username == "" || req.Password == "" {
-		return user.AuthResponse{}, user.ErrInvalidInput
+	if err := req.Validate(); err != nil {
+		return user.AuthResponse{}, err
 	}
 
-	// Check if email exists
-	emailExists, err := s.repo.ExistsByEmail(ctx, req.Email)
+	existingUser, err := s.repo.FindByEmailOrUsername(ctx, req.Email, req.Username)
 	if err != nil {
 		return user.AuthResponse{}, err
 	}
-	if emailExists {
-		return user.AuthResponse{}, user.ErrEmailExists
-	}
-
-	// Check if username exists
-	usernameExists, err := s.repo.ExistsByUsername(ctx, req.Username)
-	if err != nil {
-		return user.AuthResponse{}, err
-	}
-	if usernameExists {
+	if existingUser != (user.User{}) {
+		if existingUser.Email == req.Email {
+			return user.AuthResponse{}, user.ErrEmailExists
+		}
 		return user.AuthResponse{}, user.ErrUsernameExists
 	}
 
-	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return user.AuthResponse{}, err
