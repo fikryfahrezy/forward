@@ -266,7 +266,7 @@ CREATE TABLE complaints (
     user_id UUID NOT NULL,
     type VARCHAR(30) NOT NULL, -- defect, wrong_item, damaged, missing, other
     description TEXT NOT NULL,
-    evidence_urls JSONB DEFAULT '[]',
+    evidences JSONB DEFAULT '[]',
     status VARCHAR(30) DEFAULT 'open', -- open, under_review, resolved, rejected
     resolution_type VARCHAR(30), -- refund, replacement, store_credit, rejected
     resolution_note TEXT,
@@ -277,7 +277,7 @@ CREATE TABLE complaints (
 
 #### Redis
 
-- `cart:{user_id}` -> cart items JSON (TTL: 30 days)
+- `cart:{user_id}` -> cart items JSON
 
 ### Payment Service
 
