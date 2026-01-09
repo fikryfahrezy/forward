@@ -37,7 +37,7 @@ func (h *Handler) handleError(w http.ResponseWriter, err error) {
 		server.ErrorResponse(w, http.StatusNotFound, "", err)
 	case post.ErrUnauthorized:
 		server.ErrorResponse(w, http.StatusForbidden, "", err)
-	case post.ErrSlugExists:
+	case post.ErrSlugGenerationFail:
 		server.ErrorResponse(w, http.StatusConflict, "", err)
 	default:
 		server.ErrorResponse(w, http.StatusInternalServerError, "Internal server error", nil)

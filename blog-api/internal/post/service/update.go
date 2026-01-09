@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -35,13 +34,17 @@ func (s *Service) Update(ctx context.Context, postID, authorID uuid.UUID, req po
 			return post.PostID{}, err
 		}
 		// Ensure new slug is unique (excluding current post)
-		for {
+		const maxSlugRetries = 5
+		for i := range maxSlugRetries {
 			exists, err := s.repo.ExistsBySlugExcludingID(ctx, newSlug, postID)
 			if err != nil {
 				return post.PostID{}, err
 			}
 			if !exists {
 				break
+			}
+			if i == maxSlugRetries-1 {
+				return post.PostID{}, post.ErrSlugGenerationFail
 			}
 			newSlug, err = generateSlug(req.Title)
 			if err != nil {
@@ -53,7 +56,6 @@ func (s *Service) Update(ctx context.Context, postID, authorID uuid.UUID, req po
 	p.Title = req.Title
 	p.Slug = newSlug
 	p.Content = req.Content
-	p.UpdatedAt = time.Now()
 
 	if err := s.repo.Update(ctx, p); err != nil {
 		return post.PostID{}, err

@@ -20,13 +20,17 @@ func (s *Service) Create(ctx context.Context, authorID uuid.UUID, req post.Creat
 	}
 
 	// Ensure slug is unique
-	for {
+	const maxSlugRetries = 5
+	for i := range maxSlugRetries {
 		exists, err := s.repo.ExistsBySlug(ctx, slug)
 		if err != nil {
 			return post.PostID{}, err
 		}
 		if !exists {
 			break
+		}
+		if i == maxSlugRetries-1 {
+			return post.PostID{}, post.ErrSlugGenerationFail
 		}
 		slug, err = generateSlug(req.Title) // Regenerate with new random suffix
 		if err != nil {
