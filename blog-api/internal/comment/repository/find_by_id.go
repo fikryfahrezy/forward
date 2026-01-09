@@ -33,38 +33,3 @@ func (r *Repository) FindByID(ctx context.Context, id uuid.UUID) (comment.Commen
 	}
 	return c, nil
 }
-
-func (r *Repository) FindByIDWithAuthor(ctx context.Context, id uuid.UUID) (comment.CommentWithAuthor, error) {
-	query := `
-		SELECT
-			c.id,
-			c.content,
-			c.post_id,
-			c.author_id,
-			c.created_at,
-			c.updated_at,
-			u.username
-		FROM comments c
-			JOIN users u ON c.author_id = u.id
-		WHERE
-			c.id = $1
-			AND c.deleted_at IS NULL
-	`
-	c := comment.CommentWithAuthor{}
-	err := r.db.QueryRow(ctx, query, id).Scan(
-		&c.ID,
-		&c.Content,
-		&c.PostID,
-		&c.AuthorID,
-		&c.CreatedAt,
-		&c.UpdatedAt,
-		&c.AuthorUsername,
-	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return comment.CommentWithAuthor{}, nil
-	}
-	if err != nil {
-		return comment.CommentWithAuthor{}, err
-	}
-	return c, nil
-}

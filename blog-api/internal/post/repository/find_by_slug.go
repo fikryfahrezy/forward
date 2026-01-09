@@ -9,40 +9,6 @@ import (
 	"github.com/fikryfahrezy/forward/blog-api/internal/post"
 )
 
-func (r *Repository) FindBySlug(ctx context.Context, slug string) (post.Post, error) {
-	query := `
-		SELECT
-			id,
-			title,
-			slug,
-			content,
-			author_id,
-			created_at,
-			updated_at
-		FROM posts
-		WHERE
-			slug = $1
-			AND deleted_at IS NULL
-	`
-	p := post.Post{}
-	err := r.db.QueryRow(ctx, query, slug).Scan(
-		&p.ID,
-		&p.Title,
-		&p.Slug,
-		&p.Content,
-		&p.AuthorID,
-		&p.CreatedAt,
-		&p.UpdatedAt,
-	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return post.Post{}, nil
-	}
-	if err != nil {
-		return post.Post{}, err
-	}
-	return p, nil
-}
-
 func (r *Repository) FindBySlugWithAuthor(ctx context.Context, slug string) (post.PostWithAuthor, error) {
 	query := `
 		SELECT
