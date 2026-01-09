@@ -145,7 +145,7 @@ Alternative(s): [SigNoz](https://github.com/SigNoz/signoz) [Elasticsearch](https
 ```sql
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email VARCHAR(255) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL, -- read-only, copy from auth service
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20) NOT NULL,
@@ -180,10 +180,10 @@ CREATE TABLE addresses (
 CREATE TABLE credentials (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID UNIQUE NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
+    email VARCHAR(255) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     email_verified BOOLEAN DEFAULT FALSE,
-    status VARCHAR(20) DEFAULT 'active',
+    status VARCHAR(20) DEFAULT 'active', -- 'active', 'inactive'
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -208,6 +208,7 @@ CREATE TABLE products (
     name VARCHAR(255) NOT NULL,
     description TEXT DEFAULT '',
     price DECIMAL(12,2) NOT NULL,
+    attachments JSONB DEFAULT '[]',
     status VARCHAR(20) DEFAULT 'active', -- active, inactive
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -545,6 +546,7 @@ Keep backups for at least 7 days.
 
 ## References
 
+- https://www.tokopedia.com
 - https://medusajs.com/blog/ecommerce-architecture
 - https://ngrok.com/blog/reverse-proxy-vs-api-gateway
 - https://microservices.io/patterns
