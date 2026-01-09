@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
 	"log"
 	"net/url"
 	"os"
@@ -20,6 +21,7 @@ import (
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
 
+	"github.com/fikryfahrezy/forward/blog-api/internal/logger"
 	"github.com/fikryfahrezy/forward/blog-api/internal/server"
 	"github.com/fikryfahrezy/forward/blog-api/internal/user/handler"
 	"github.com/fikryfahrezy/forward/blog-api/internal/user/repository"
@@ -183,11 +185,11 @@ func runMigrations(databaseURL string) error {
 }
 
 func setupTestHandler() {
+	logger.NewLogger(logger.Config{}, io.Discard)
 	repo := repository.New(testPool)
 	svc := service.New(server.NewJWTGenerator(testJWTSecret, testTokenExpiry), repo)
 	testHandler = handler.New(svc)
 
-	// Setup server with JWT middleware
 	testServer = server.New(server.Config{Host: "localhost", Port: 8080})
 	testServer.SetJWTMiddleware(server.NewJWTMiddleware(server.JWTConfig{SecretKey: testJWTSecret}))
 	testHandler.SetupRoutes(testServer)

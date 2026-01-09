@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -24,6 +25,7 @@ import (
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
 
+	"github.com/fikryfahrezy/forward/blog-api/internal/logger"
 	postHandler "github.com/fikryfahrezy/forward/blog-api/internal/post/handler"
 	postRepository "github.com/fikryfahrezy/forward/blog-api/internal/post/repository"
 	postService "github.com/fikryfahrezy/forward/blog-api/internal/post/service"
@@ -182,17 +184,15 @@ func runMigrations(databaseURL string) error {
 }
 
 func setupTestHandlers() {
-	// Setup user handler (needed for creating test users)
+	logger.NewLogger(logger.Config{}, io.Discard)
 	userRepo := userRepository.New(testPool)
 	userSvc := userService.New(server.NewJWTGenerator(testJWTSecret, testTokenExpiry), userRepo)
 	testUserHandler = userHandler.New(userSvc)
 
-	// Setup post handler
 	postRepo := postRepository.New(testPool)
 	postSvc := postService.New(postRepo)
 	testPostHandler = postHandler.New(postSvc)
 
-	// Setup server with JWT middleware
 	testServer = server.New(server.Config{Host: "localhost", Port: 8080})
 	testServer.SetJWTMiddleware(server.NewJWTMiddleware(server.JWTConfig{SecretKey: testJWTSecret}))
 	testUserHandler.SetupRoutes(testServer)

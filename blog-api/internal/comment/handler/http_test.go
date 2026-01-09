@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -27,6 +28,7 @@ import (
 	commentHandler "github.com/fikryfahrezy/forward/blog-api/internal/comment/handler"
 	commentRepository "github.com/fikryfahrezy/forward/blog-api/internal/comment/repository"
 	commentService "github.com/fikryfahrezy/forward/blog-api/internal/comment/service"
+	"github.com/fikryfahrezy/forward/blog-api/internal/logger"
 	"github.com/fikryfahrezy/forward/blog-api/internal/post"
 	postHandler "github.com/fikryfahrezy/forward/blog-api/internal/post/handler"
 	postRepository "github.com/fikryfahrezy/forward/blog-api/internal/post/repository"
@@ -184,6 +186,7 @@ func runMigrations(databaseURL string) error {
 }
 
 func setupTestHandlers() {
+	logger.NewLogger(logger.Config{}, io.Discard)
 	userRepo := userRepository.New(testPool)
 	userSvc := userService.New(server.NewJWTGenerator(testJWTSecret, testTokenExpiry), userRepo)
 	testUserHandler = userHandler.New(userSvc)
